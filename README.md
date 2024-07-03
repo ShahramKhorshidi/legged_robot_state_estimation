@@ -1,2 +1,7 @@
 # legged_robot_state_estimation
-EKF state estimators for estimating base and centroidal states of a legged robot
+This repository provides python code templates of different state estimators for legged robots.
+Base state estimation
+This estimator fuses IMU data with leg odometry in and EKF and EKF framework. 
+
+Centoridal state estimation
+This estimator 

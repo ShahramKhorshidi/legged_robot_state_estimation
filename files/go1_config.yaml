@@ -1,0 +1,15 @@
+robot:
+  mass: 14.5
+  end_effectors_frame_names:
+    - "HL_ANKLE"
+    - "HR_ANKLE"
+    - "FL_ANKLE"
+    - "FR_ANKLE"
+  dt: 0.001 # Estimation frequency
+
+  rot_base_to_imu:
+    - [1.0, 0.0, 0.0]
+    - [0.0, 1.0, 0.0]
+    - [0.0, 0.0, 1.0]
+  r_base_to_imu: [-0.01592, -0.06659, -0.00617]
+
