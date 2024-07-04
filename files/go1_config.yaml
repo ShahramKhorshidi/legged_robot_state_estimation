@@ -1,12 +1,16 @@
 robot:
   mass: 14.5
+  base_link_name: "trunk"
   end_effectors_frame_names:
-    - "HL_ANKLE"
-    - "HR_ANKLE"
-    - "FL_ANKLE"
-    - "FR_ANKLE"
+    - "FL_foot_fixed"
+    - "FR_foot_fixed"
+    - "RL_foot_fixed"
+    - "RR_foot_fixed"
   dt: 0.001 # Estimation frequency
-
+  initial_configuration: 
+    [0.0, 0.0, 0.33, 0.0, 0.0, 0.0, 1.0, 0.1, 0.7, -1.45, 0.1, 0.7, -1.45, 0.1, 0.7, -1.45, 0.1, 0.7, -1.45]
+  
+  # Rotation and translation from base to IMU frame
   rot_base_to_imu:
     - [1.0, 0.0, 0.0]
     - [0.0, 1.0, 0.0]
