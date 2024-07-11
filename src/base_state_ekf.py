@@ -76,8 +76,7 @@ class EKF(object):
             robot_config : Configuration file of the robot.
             dt (float): Discretization time.
         """
-        # private members
-        # Load configuration from YAML file
+        # Load robot configuration from YAML file
         with open(robot_config, 'r') as file:
             config = yaml.safe_load(file)
         self._rmodel = pin.buildModelFromUrdf(urdf_file, pin.JointModelFreeFlyer())
@@ -85,7 +84,7 @@ class EKF(object):
         robot_config = config.get('robot', {})
         self._nx = 5 * 3
         self.__init_robot_config = np.array(robot_config.get('initial_configuration'))
-        self._dt = dt
+        self._dt = robot_config.get('dt', 0.001)  # Default dt: 0.001
         self._g_vector = np.array([0, 0, -9.81])
         self._base_frame_name = robot_config.get('base_link_name')
         self._end_effectors_frame_names = robot_config.get('end_effectors_frame_names')
@@ -127,10 +126,14 @@ class EKF(object):
             self._rot_base_to_imu.T, self._r_base_to_imu
         )
         self._SE3_base_to_imu = self._SE3_imu_to_base.inverse()
-        self._Q_a = self._dt * np.diag((0.0001962**2) * np.ones([3]))
-        self._Q_omega = self._dt * np.diag((0.0000873**2) * np.ones([3]))
-        self._Qb_a = np.diag((0.0001**2) * np.ones([3]))
-        self._Qb_omega = np.diag((0.000309**2) * np.ones([3]))
+        imu_accel_thermal_noise = robot_config.get('imu_accel_thermal_noise')
+        imu_gyro_thermal_noise = robot_config.get('imu_gyro_thermal_noise')
+        imu_accel_bias_noise = robot_config.get('imu_accel_bias_noise')
+        imu_gyro_bias_noise = robot_config.get('imu_gyro_bias_noise')
+        self._Q_a = self._dt * np.diag((imu_accel_thermal_noise**2) * np.ones([3]))
+        self._Q_omega = self._dt * np.diag((imu_gyro_thermal_noise**2) * np.ones([3]))
+        self._Qb_a = np.diag((imu_accel_bias_noise**2) * np.ones([3]))
+        self._Qb_omega = np.diag((imu_gyro_bias_noise**2) * np.ones([3]))
         self._R = np.zeros((3 * self._nb_ee, 3 * self._nb_ee), dtype=float)
         np.fill_diagonal(self._R, np.array([1e-5, 1e-5, 1e-5]))
         # call private methods
@@ -580,25 +583,4 @@ class EKF(object):
                 "ekf_frame_orientation"
             ]
         return self._base_state
-
-
-if __name__ == "__main__":
-    cur_dir = Path.cwd()
-    robot_urdf = cur_dir/"files"/"go1.urdf"
-    robot_config = cur_dir/"files"/"go1_config.yaml"
-    robot_base_ekf = EKF(str(robot_urdf), robot_config)
-    robot_base_ekf.set_meas_noise_cov(np.array([1e-4, 1e-4, 1e-4]))
-    f_tilde = np.random.rand(3)
-    w_tilde = np.random.rand(3)
-    # contacts schedule for solo12 end_effoctors: ['FL_FOOT', 'FR_FOOT', 'HL_FOOT', 'HR_FOOT']
-    contacts_schedule = [True, True, True, True]
-    joint_positions = np.random.rand(12)
-    joint_velocities = np.random.rand(12)
-    robot_base_ekf.update_filter(
-        f_tilde,
-        w_tilde,
-        contacts_schedule,
-        joint_positions,
-        joint_velocities,
-    )
-    base_state = robot_base_ekf.get_filter_output()
+    
