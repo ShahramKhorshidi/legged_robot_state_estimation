@@ -1,12 +1,12 @@
 robot:
-  mass: 14.5
+  mass: 14.100428
   base_link_name: "trunk"
   end_effectors_frame_names:
     - "FL_foot_fixed"
     - "FR_foot_fixed"
     - "RL_foot_fixed"
     - "RR_foot_fixed"
-  dt: 0.001 # Estimation frequency
+  dt: 0.001 # Estimation frequency (msec)
   initial_configuration: 
     [0.0, 0.0, 0.33, 0.0, 0.0, 0.0, 1.0, 0.1, 0.7, -1.45, 0.1, 0.7, -1.45, 0.1, 0.7, -1.45, 0.1, 0.7, -1.45]
   
@@ -17,3 +17,8 @@ robot:
     - [0.0, 0.0, 1.0]
   r_base_to_imu: [-0.01592, -0.06659, -0.00617]
 
+  # IMU thermal and bias noise (from IMU datasheet)
+  imu_accel_thermal_noise: 0.0001962  # m/(sec^2*sqrt(Hz))
+  imu_gyro_thermal_noise: 0.0000873  # rad/(sec*sqrt(Hz))
+  imu_accel_bias_noise: 0.0001  # m/(sec^3*sqrt(Hz))
+  imu_gyro_bias_noise: 0.000309  # rad/(sec^2*sqrt(Hz))
