@@ -1,0 +1,18 @@
+# Bytecode files #
+##################
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data files #
+##################
+# data
+# *.dat
+
+# Other files #
+##################
+*.vscode
+
+# Setup files #
+##################
+*.bash
