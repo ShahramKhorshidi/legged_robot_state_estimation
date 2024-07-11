@@ -7,7 +7,6 @@ Authors: Ahmad Gazar, Shahram Khorshidi
 import yaml
 import numpy as np
 import pinocchio as pin
-from pathlib import Path
 from numpy.linalg import inv
 from pinocchio import Quaternion
 
