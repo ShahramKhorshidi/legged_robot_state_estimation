@@ -6,7 +6,6 @@ Author: Shahram Khorshidi
 import yaml
 import numpy as np
 import pinocchio as pin
-from pathlib import Path
 from numpy.linalg import inv
 
 
@@ -20,7 +19,7 @@ class ForceCentroidalEKF(object):
         robot_config = config.get('robot', {})
         self._robot_mass = robot_config.get('mass')
         self._nx = 3 * 3
-        self._dt = robot_config.get('dt', 0.001)  # Default dt 0.001
+        self._dt = robot_config.get('dt', 0.001)  # Default dt: 0.001
         self._g_vector = np.array([0, 0, -9.81])
         self._end_effectors_frame_names = robot_config.get('end_effectors_frame_names', [])
         self._nb_ee = len(self._end_effectors_frame_names)
@@ -44,8 +43,8 @@ class ForceCentroidalEKF(object):
         self._mu_post = value
         
     def update_robot(self):
-        pin.forwardKinematics(  self._rmodel, self._rdata, self.q, self.dq)
-        pin.framesForwardKinematics(  self._rmodel, self._rdata, self.q)
+        pin.forwardKinematics(self._rmodel, self._rdata, self.q, self.dq)
+        pin.framesForwardKinematics(self._rmodel, self._rdata, self.q)
         
     def compute_ee_position(self):
         self.ee_positions = []
@@ -179,7 +178,7 @@ class ForceCentroidalEKF(object):
     def update_filter(self, q, dq, contact_scedule, ee_force, integration_method="euler"):
         self.q = q
         self.dq = dq
-        self.ee_force = ee_force
+        self.ee_force = ee_force.reshape(self._nb_ee, 3)
         self.contact = contact_scedule
         
         # Update robot state and compute necessary dynamics
@@ -198,16 +197,3 @@ class ForceCentroidalEKF(object):
         lin_momentum = self._mu_post[3:6]
         ang_momentum = self._mu_post[6:9]
         return com_position, lin_momentum, ang_momentum
-
-
-if __name__ == "__main__":
-    cur_dir = Path.cwd()
-    robot_urdf = cur_dir/"files"/"go1.urdf"
-    robot_config = cur_dir/"files"/"go1_config.yaml"
-    solo_cent_ekf = ForceCentroidalEKF(str(robot_urdf), robot_config)
-    robot_q = np.random.rand(19)
-    robot_dq = np.random.rand(18)
-    ee_force = np.random.rand(4, 3)
-    contacts_schedule = [True, True, True, True]
-    solo_cent_ekf.update_filter(robot_q, robot_dq, contacts_schedule, ee_force)
-    com, lin_mom, ang_mom = solo_cent_ekf.get_filter_output()

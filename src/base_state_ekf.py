@@ -18,7 +18,7 @@ def box_minus(R_plus, R):
     return pin.log(R.T @ R_plus)
 
 
-class EKF(object):
+class BaseEKF(object):
     """EKF class for estimation of the position, velocity, orientation of the base frame on the robot, and IMU bias_linear_acceleration and bias_angular_rate.
     Position and orientation are expressed in the world, velocity is expressed in the base_frame, and bias terms are expressed in the IMU frame. EKF_frame
     can be defined in the Base or IMU frame.

@@ -7,7 +7,6 @@ Author: Shahram Khorshidi
 import yaml
 import numpy as np
 import pinocchio as pin
-from pathlib import Path
 from numpy.linalg import inv, pinv
 
 
@@ -45,7 +44,7 @@ class TorqueCentroidalEKF(object):
         self._rdata = self._rmodel.createData()
         robot_config = config.get('robot', {})
         self._nx = 3 * 3
-        self._dt = robot_config.get('dt', 0.001)  # Default dt 0.001
+        self._dt = robot_config.get('dt', 0.001)  # Default dt: 0.001
         self._end_effectors_frame_names = robot_config.get('end_effectors_frame_names', [])
         self._endeff_ids = [
               self._rmodel.getFrameId(name)
@@ -55,14 +54,6 @@ class TorqueCentroidalEKF(object):
 
         self._nb_ee = len(self._end_effectors_frame_names)
         self._nv =   self._rmodel.nv
-        self._centroidal_state = dict.fromkeys(
-            [
-                "com_position",
-                "linear_momentum",
-                "angular_momentum",
-            ]
-        )
-
         self._mu_pre = np.zeros(self._nx, dtype=float)
         self._mu_post = np.zeros(self._nx, dtype=float)
         self._sigma_pre = np.zeros((self._nx, self._nx), dtype=float)
@@ -356,29 +347,10 @@ class TorqueCentroidalEKF(object):
         """Returns the centroidal states, estimated by the EKF.
 
         Returns:
-            dict
+            tuple of np.arrays
         """
-        self._centroidal_state["com_position"] = self._mu_post[0:3]
-        self._centroidal_state["linear_momentum"] = self._mu_post[3:6]
-        self._centroidal_state["angular_momentum"] = self._mu_post[6:9]
-        return self._centroidal_state
-
-
-if __name__ == "__main__":
-    cur_dir = Path.cwd()
-    robot_urdf = cur_dir/"files"/"go1.urdf"
-    robot_config = cur_dir/"files"/"go1_config.yaml"
-    robot_cent_ekf = TorqueCentroidalEKF(str(robot_urdf), robot_config)
+        com_position = self._mu_post[0:3]
+        lin_momentum = self._mu_post[3:6]
+        ang_momentum = self._mu_post[6:9]
+        return com_position, lin_momentum, ang_momentum
     
-    robot_configuration = np.random.rand(19)
-    robot_velocity = np.random.rand(18)
-    joint_torques = np.random.rand(12)
-    contacts_schedule = [1, 1, 1, 1]
-    robot_cent_ekf.update_filter(
-        robot_configuration,
-        robot_velocity,
-        contacts_schedule,
-        joint_torques,
-    )
-
-    centroidal_state = robot_cent_ekf.get_filter_output()
