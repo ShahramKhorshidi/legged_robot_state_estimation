@@ -1,7 +1,7 @@
 import numpy as np
 import pinocchio as pin
 from pathlib import Path
-from src.base_state_ekf import EKF
+from src.base_state_ekf import BaseEKF
 import matplotlib.pyplot as plt
 
 def plot(x, y, x_legend, y_legend, title):
@@ -9,8 +9,8 @@ def plot(x, y, x_legend, y_legend, title):
     string = "XYZ"
     for i in range(3):
         plt.subplot(int("31" + str(i + 1)))
-        plt.plot(t, x[:, i], "b", label=x_legend, linewidth=0.75)
-        plt.plot(t, y[:, i], "r--", label=y_legend, linewidth=0.75)
+        plt.plot(t, x[:, i], "b", label=x_legend, linewidth=0.95)
+        plt.plot(t, y[:, i], "r--", label=y_legend, linewidth=0.95)
         plt.ylabel("_" + string[i] + "_")
         plt.grid()
     plt.legend(loc="upper right", shadow=True, fontsize="large")
@@ -19,7 +19,7 @@ def plot(x, y, x_legend, y_legend, title):
 
 
 if __name__ == "__main__":
-    # Read the trajectory data - Jumping motion
+    # Read the trajectory data - Trot motion of Unitree Go1
     path = Path.cwd()
     q = np.loadtxt(path/"data"/"robot_q.dat", delimiter='\t', dtype=np.float32)
     dq = np.loadtxt(path/"data"/"robot_dq.dat", delimiter='\t', dtype=np.float32)
@@ -39,8 +39,8 @@ if __name__ == "__main__":
     # Create EKF instance
     robot_urdf = path/"files"/"go1.urdf"
     robot_config = path/"files"/"go1_config.yaml"
-    robot_base_ekf = EKF(str(robot_urdf), robot_config)
-    robot_base_ekf.set_meas_noise_cov(np.array([1e-5, 1e-5, 1e-5]))
+    robot_base_ekf = BaseEKF(str(robot_urdf), robot_config)
+    robot_base_ekf.set_meas_noise_cov(np.array([1e-1, 1e-1, 1e-1])) # Tuning parameter
 
     for i in range(sim_time):
         # Set the initial values of EKF
