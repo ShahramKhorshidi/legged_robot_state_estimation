@@ -230,6 +230,20 @@ python -m unittest discover -s tests -v
 
 ---
 
+## Citation
+
+If you use the torque-based centroidal state estimator in an academic work, please cite the following paper:
+```
+@inproceedings{khorshidi23icra,
+  title={On the Use of Torque Measurement in Centroidal State Estimation}, 
+  author={Khorshidi, Shahram and Gazar, Ahmad and Rotella, Nicholas and Naveau, Maximilien and Righetti, Ludovic and Bennewitz, Maren and Khadiv, Majid},
+  booktitle={Proc. of the IEEE International Conference on Robotics and Automation (ICRA)}, 
+  year={2023}
+}
+```
+
+---
+
 ## References
 
 [1] M. Bloesch, M. Hutter, M. A. Hoepflinger, S. Leutenegger, C. Gehring,
