@@ -1,0 +1,10 @@
+name: state_estimation
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy=2.0
+  - scipy=1.15
+  - pinocchio=3.7
+  - pyyaml=6.0
+  - matplotlib=3.10
