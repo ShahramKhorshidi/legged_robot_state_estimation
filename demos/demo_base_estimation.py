@@ -1,7 +1,7 @@
 import numpy as np
 import pinocchio as pin
 from pathlib import Path
-from src.base_state_ekf import BaseEKF
+from base_estimation.base_est_ekf import BaseEKF
 import matplotlib.pyplot as plt
 
 def plot(x, y, x_legend, y_legend, title):
@@ -26,6 +26,17 @@ if __name__ == "__main__":
     contacts_schedule = np.loadtxt(path/"data"/"robot_cnt.dat", delimiter='\t', dtype=np.float32)
     imu_lin_acc = np.loadtxt(path/"data"/"robot_imu.dat", delimiter='\t', dtype=np.float32)[:3, :]
     imu_ang_vel = np.loadtxt(path/"data"/"robot_imu.dat", delimiter='\t', dtype=np.float32)[3:, :]
+    
+    print(imu_ang_vel.shape)
+    t = np.arange(imu_ang_vel.shape[1])
+    string = "XYZ"
+    for i in range(3):
+        plt.subplot(int("31" + str(i + 1)))
+        plt.plot(t, imu_ang_vel[i, :], "b", linewidth=0.95)
+        plt.grid()
+    plt.legend(loc="upper right", shadow=True, fontsize="large")
+    plt.xlabel("time(ms)")
+    plt.suptitle("Lin_acc")
     
     # Initialize vectors for data collecting
     sim_time = q.shape[1]

@@ -2,8 +2,8 @@ import numpy as np
 import pinocchio as pin
 from pathlib import Path
 import matplotlib.pyplot as plt
-from src.centroidal_state_ekf_force import ForceCentroidalEKF
-from src.centroidal_state_ekf_torque import TorqueCentroidalEKF
+from centroidal_estimation.centroidal_state_ekf_force import ForceCentroidalEKF
+from centroidal_estimation.centroidal_state_ekf_torque import TorqueCentroidalEKF
 
 def plot(x, y, z, x_legend, y_legend, z_legend, title):
     t = np.arange(sim_time)
