@@ -1,9 +1,6 @@
-"""Invariant Extended Kalman Filter Class
-License BSD-3-Clause
-Copyright (c) 2025, University of Bonn.
-Author: Shahram Khorshidi
-"""
 # BSD 3-Clause License
+# Copyright (c) 2025, University of Bonn.
+# Author: Shahram Khorshidi
 # Copyright (c) 2018-2019, Ross Hartley
 # All rights reserved.
 #
@@ -41,8 +38,8 @@ Quick integration
 -----------------
     from src.base_estimation.base_state_inekf import BaseInEKF
     ekf = BaseInEKF(urdf_path, yaml_path, dt=0.001,
-                   sigma_encoder=1e-3, sigma_kinematics=0.003,
-                   sigma_contact=0.01)
+                   sigma_encoder=1e-3, sigma_kinematics=0.1,
+                   sigma_contact=0.1)
     # Mean is at sample-zero time. Register contacts without advancing time:
     ekf.initialize_contacts(contact0, q_joint0, omega_tilde=gyro0)
     # Samples below are at successive times; dt is the elapsed time.
@@ -130,7 +127,7 @@ from pathlib import Path
 import time
 
 import numpy as np
-from scipy.linalg import block_diag, cho_factor, cho_solve
+from scipy.linalg import cho_factor, cho_solve
 from scipy.stats import chi2
 
 
@@ -297,9 +294,10 @@ class ContactAidedInEKF:
         bg = _vector(np.zeros(3) if gyro_bias is None else gyro_bias, 3, "gyro_bias")
         ba = _vector(np.zeros(3) if accel_bias is None else accel_bias, 3, "accel_bias")
         if covariance is None:
-            # An uncertain initial estimate, not the all-zero covariance of the old EKF.
-            std = np.r_[np.full(3, .1), np.full(3, .1), np.full(3, .1),
-                        np.full(3, .01), np.full(3, .1)]
+            # The adapter initializes the mean from the robot configuration or
+            # from set_initial_state(). Keep this prior modest by default; a
+            # deliberately uncertain start should be supplied explicitly.
+            std = np.r_[np.full(9, 1e-3), np.full(3, 1e-4), np.full(3, 1e-3)]
             P = np.diag(std**2)
         else:
             P = _covariance(covariance, 15, "initial covariance")
@@ -523,16 +521,30 @@ class BaseInEKF:
     between them is supported. See set_initial_state() for initialization.
     """
 
-    def __init__(self, urdf_file, robot_config, dt=None, *, sigma_encoder=1e-3,
-                 encoder_covariance=None, sigma_kinematics=.003, sigma_contact=.01,
-                 initial_covariance=None, imu_noise_is_density=True,
-                 mean_integration="zoh", covariance_discretization="polynomial",
-                 contact_gate_probability=None):
+    def __init__(
+        self,
+        urdf_file,
+        robot_config,
+        dt=None,
+        *,
+        sigma_encoder=1e-3,
+        encoder_covariance=None,
+        sigma_kinematics=0.1,
+        sigma_contact=0.1,
+        initial_covariance=None,
+        imu_noise_is_density=True,
+        mean_integration="zoh",
+        covariance_discretization="polynomial",
+        contact_gate_probability=None,
+    ):
         try:
             import pinocchio as pin
             import yaml
         except ImportError as exc:
-            raise ImportError("BaseInEKF needs Pinocchio (package 'pin') and PyYAML") from exc
+            raise ImportError(
+                "BaseInEKF needs Pinocchio (package 'pin') and PyYAML"
+            ) from exc
+
         self._pin = pin
         if isinstance(robot_config, Mapping):
             config = robot_config
@@ -543,63 +555,125 @@ class BaseInEKF:
         self._dt = float(config.get("dt", .001) if dt is None else dt)
         if not np.isfinite(self._dt) or self._dt <= 0:
             raise ValueError("dt must be finite and positive")
-        self._rmodel = (urdf_file if isinstance(urdf_file, pin.Model) else
-                        pin.buildModelFromUrdf(str(urdf_file), pin.JointModelFreeFlyer()))
+
+        if isinstance(urdf_file, pin.Model):
+            self._rmodel = urdf_file
+        else:
+            self._rmodel = pin.buildModelFromUrdf(
+                str(urdf_file), pin.JointModelFreeFlyer()
+            )
         self._rdata = self._rmodel.createData()
-        if self._rmodel.njoints < 2 or self._rmodel.joints[1].shortname() != "JointModelFreeFlyer":
+        if (
+            self._rmodel.njoints < 2
+            or self._rmodel.joints[1].shortname() != "JointModelFreeFlyer"
+        ):
             raise ValueError("The robot must have a free-flyer as joint 1")
-        self._nqj, self._nvj = self._rmodel.nq-7, self._rmodel.nv-6
-        self._base_frame_name = config.get("base_link_name", (config.get("link_names") or [None])[0])
-        if self._base_frame_name is None or not self._rmodel.existFrame(self._base_frame_name):
+        self._nqj = self._rmodel.nq - 7
+        self._nvj = self._rmodel.nv - 6
+
+        default_base_name = (config.get("link_names") or [None])[0]
+        self._base_frame_name = config.get("base_link_name", default_base_name)
+        if (
+            self._base_frame_name is None
+            or not self._rmodel.existFrame(self._base_frame_name)
+        ):
             raise ValueError("Configure a valid robot.base_link_name")
         self._base_id = self._rmodel.getFrameId(self._base_frame_name)
         if self._rmodel.frames[self._base_id].parentJoint != 1:
             raise ValueError("The base frame must be fixed to the free-flyer joint")
-        self._end_effectors_frame_names = list(config.get("end_effectors_frame_names", []))
+
+        self._end_effectors_frame_names = list(
+            config.get("end_effectors_frame_names", [])
+        )
         self._nb_ee = len(self._end_effectors_frame_names)
         if not self._nb_ee:
             raise ValueError("Configure at least one end_effectors_frame_names entry")
         if len(set(self._end_effectors_frame_names)) != self._nb_ee:
             raise ValueError("Contact frame names must be unique")
-        if any(not self._rmodel.existFrame(i) for i in self._end_effectors_frame_names):
+        if any(
+            not self._rmodel.existFrame(name)
+            for name in self._end_effectors_frame_names
+        ):
             raise ValueError("Unknown end-effector frame")
-        self._foot_ids = [self._rmodel.getFrameId(i) for i in self._end_effectors_frame_names]
-        self._R_BI = _rotation(config.get("rot_base_to_imu", np.eye(3)), "rot_base_to_imu").T
-        self._r_BI = _vector(config.get("r_base_to_imu", np.zeros(3)), 3, "r_base_to_imu")
+        self._foot_ids = [
+            self._rmodel.getFrameId(name)
+            for name in self._end_effectors_frame_names
+        ]
+
+        self._R_BI = _rotation(
+            config.get("rot_base_to_imu", np.eye(3)), "rot_base_to_imu"
+        ).T
+        self._r_BI = _vector(
+            config.get("r_base_to_imu", np.zeros(3)), 3, "r_base_to_imu"
+        )
         if encoder_covariance is None:
-            self._encoder_cov = np.diag(_std(sigma_encoder, self._nvj, "sigma_encoder")**2)
+            encoder_std = _std(sigma_encoder, self._nvj, "sigma_encoder")
+            self._encoder_cov = np.diag(encoder_std**2)
         else:
-            self._encoder_cov = _covariance(encoder_covariance, self._nvj, "encoder_covariance")
-        self._sigma_fk = float(_std(sigma_kinematics, 1, "sigma_kinematics", positive=True)[0])
-        for key in ("imu_gyro_thermal_noise", "imu_accel_thermal_noise",
-                    "imu_gyro_bias_noise", "imu_accel_bias_noise"):
+            self._encoder_cov = _covariance(
+                encoder_covariance, self._nvj, "encoder_covariance"
+            )
+        self._sigma_fk = float(
+            _std(
+                sigma_kinematics,
+                1,
+                "sigma_kinematics",
+                positive=True,
+            )[0]
+        )
+
+        noise_keys = (
+            "imu_gyro_thermal_noise",
+            "imu_accel_thermal_noise",
+            "imu_gyro_bias_noise",
+            "imu_accel_bias_noise",
+        )
+        for key in noise_keys:
             if key not in config:
                 raise ValueError(f"Missing robot configuration noise entry {key!r}")
-        q0 = _vector(config.get("initial_configuration", pin.neutral(self._rmodel)),
-                     self._rmodel.nq, "initial_configuration")
+
+        q0 = _vector(
+            config.get("initial_configuration", pin.neutral(self._rmodel)),
+            self._rmodel.nq,
+            "initial_configuration",
+        )
         if np.linalg.norm(q0[3:7]) < 1e-12:
             raise ValueError("Initial free-flyer quaternion must be nonzero")
         q0 = pin.normalize(self._rmodel, q0)
         pin.framesForwardKinematics(self._rmodel, self._rdata, q0)
         base = self._rdata.oMf[self._base_id]
         self.core = ContactAidedInEKF(
-            rotation=base.rotation@self._R_BI,
-            position=base.translation+base.rotation@self._r_BI,
-            covariance=initial_covariance, gravity=self._rmodel.gravity.linear,
+            rotation=base.rotation @ self._R_BI,
+            position=base.translation + base.rotation @ self._r_BI,
+            covariance=initial_covariance,
+            gravity=self._rmodel.gravity.linear,
             gyro_noise_std=config["imu_gyro_thermal_noise"],
             accel_noise_std=config["imu_accel_thermal_noise"],
             gyro_bias_noise_std=config["imu_gyro_bias_noise"],
             accel_bias_noise_std=config["imu_accel_bias_noise"],
-            contact_noise_std=sigma_contact, kinematics_noise_std=sigma_kinematics,
+            contact_noise_std=sigma_contact,
+            kinematics_noise_std=sigma_kinematics,
             imu_noise_is_density=imu_noise_is_density,
-            mean_integration=mean_integration, covariance_discretization=covariance_discretization,
-            contact_gate_probability=contact_gate_probability)
+            mean_integration=mean_integration,
+            covariance_discretization=covariance_discretization,
+            contact_gate_probability=contact_gate_probability,
+        )
         self._initial_covariance = self.core.P.copy()
         self._last_gyro = np.zeros(3)
         self._last_update_seconds = np.nan
 
-    def set_initial_state(self, base_position, base_velocity, base_orientation, *,
-                          gyro_bias=None, accel_bias=None, omega_tilde=None, covariance=None):
+    # Public methods
+    def set_initial_state(
+        self,
+        base_position,
+        base_velocity,
+        base_orientation,
+        *,
+        gyro_bias=None,
+        accel_bias=None,
+        omega_tilde=None,
+        covariance=None,
+    ):
         """Reset from a BASE state; clear contacts, then call initialize_contacts().
 
         base_position: world position. base_velocity: base-frame linear velocity.
@@ -628,51 +702,85 @@ class BaseInEKF:
                 q = self._pin.Quaternion(qv)
                 q.normalize()
                 RB = q.matrix()
-        bg = _vector(np.zeros(3) if gyro_bias is None else gyro_bias, 3, "gyro_bias")
-        ba = _vector(np.zeros(3) if accel_bias is None else accel_bias, 3, "accel_bias")
-        gyro = bg.copy() if omega_tilde is None else _vector(omega_tilde, 3, "omega_tilde")
-        wB = self._R_BI@(gyro-bg)
-        self.core.reset(rotation=RB@self._R_BI, position=pB+RB@self._r_BI,
-                        velocity=RB@(vB+np.cross(wB, self._r_BI)), gyro_bias=bg, accel_bias=ba,
-                        covariance=self._initial_covariance if covariance is None else covariance)
+        bg = _vector(
+            np.zeros(3) if gyro_bias is None else gyro_bias, 3, "gyro_bias"
+        )
+        ba = _vector(
+            np.zeros(3) if accel_bias is None else accel_bias, 3, "accel_bias"
+        )
+        gyro = (
+            bg.copy()
+            if omega_tilde is None
+            else _vector(omega_tilde, 3, "omega_tilde")
+        )
+        angular_velocity_base = self._R_BI @ (gyro - bg)
+        initial_covariance = (
+            self._initial_covariance if covariance is None else covariance
+        )
+        self.core.reset(
+            rotation=RB @ self._R_BI,
+            position=pB + RB @ self._r_BI,
+            velocity=RB
+            @ (vB + np.cross(angular_velocity_base, self._r_BI)),
+            gyro_bias=bg,
+            accel_bias=ba,
+            covariance=initial_covariance,
+        )
         self._last_gyro = gyro
 
+    # Private methods
     def _kinematics(self, contacts_schedule, joint_positions):
         mask = np.asarray(contacts_schedule).reshape(-1)
         if mask.size != self._nb_ee or not np.all(np.isin(mask, [0, 1])):
-            raise ValueError("contacts_schedule must contain one Boolean/0/1 per configured foot")
+            raise ValueError(
+                "contacts_schedule must contain one Boolean/0/1 per configured foot"
+            )
         mask = mask.astype(bool)
         qj = _vector(joint_positions, self._nqj, "joint_positions")
         q = np.r_[np.zeros(3), 0., 0., 0., 1., qj]
         if not self._pin.isNormalized(self._rmodel, q, 1e-6):
-            raise ValueError("Joint configuration must be normalized on the model's configuration manifold")
+            raise ValueError(
+                "Joint configuration must be normalized on the model manifold"
+            )
         self._pin.computeJointJacobians(self._rmodel, self._rdata, q)
         self._pin.updateFramePlacements(self._rmodel, self._rdata)
         base = self._rdata.oMf[self._base_id]
         # Root coordinates are fixed for FK. The named base may have a fixed
         # offset from root; it has zero actuated-joint Jacobian by construction.
-        root_to_imu = self._R_BI.T@base.rotation.T
+        root_to_imu = self._R_BI.T @ base.rotation.T
         positions, jacobians = {}, []
         for i, on in enumerate(mask):
             if not on:
                 continue
             foot = self._rdata.oMf[self._foot_ids[i]]
-            pB = base.rotation.T@(foot.translation-base.translation)
-            positions[i] = self._R_BI.T@(pB-self._r_BI)
-            J = self._pin.getFrameJacobian(self._rmodel, self._rdata, self._foot_ids[i],
-                                           self._pin.LOCAL_WORLD_ALIGNED)
+            position_base = base.rotation.T @ (
+                foot.translation - base.translation
+            )
+            positions[i] = self._R_BI.T @ (position_base - self._r_BI)
+            jacobian = self._pin.getFrameJacobian(
+                self._rmodel,
+                self._rdata,
+                self._foot_ids[i],
+                self._pin.LOCAL_WORLD_ALIGNED,
+            )
             # Pinocchio linear rows are 0:3; use the joint tangent columns 6:.
-            jacobians.append(root_to_imu@J[:3, 6:])
+            jacobians.append(root_to_imu @ jacobian[:3, 6:])
         count = np.count_nonzero(mask)
         if count:
-            Jall = np.vstack(jacobians)
-            C = Jall@self._encoder_cov@Jall.T + self._sigma_fk**2*np.eye(3*count)
+            jacobian = np.vstack(jacobians)
+            covariance = (
+                jacobian @ self._encoder_cov @ jacobian.T
+                + self._sigma_fk**2 * np.eye(3 * count)
+            )
         else:
-            C = np.empty((0, 0))
+            covariance = np.empty((0, 0))
         schedule = {i: bool(on) for i, on in enumerate(mask)}
-        return positions, schedule, C
+        return positions, schedule, covariance
 
-    def initialize_contacts(self, contacts_schedule, joint_positions, *, omega_tilde=None):
+    # Public methods
+    def initialize_contacts(
+        self, contacts_schedule, joint_positions, *, omega_tilde=None
+    ):
         """Initialize stance feet at the CURRENT state time without propagating.
 
         Call once at sample zero, after any set_initial_state(). Subsequent contact
@@ -680,14 +788,26 @@ class BaseInEKF:
         This method does not infer the initial linear velocity from a gyro sample.
         """
         if self.core.contact_ids:
-            raise RuntimeError("Contacts already initialized; use update_filter for subsequent samples")
-        positions, schedule, covariance = self._kinematics(contacts_schedule, joint_positions)
+            raise RuntimeError(
+                "Contacts already initialized; use update_filter afterwards"
+            )
+        positions, schedule, covariance = self._kinematics(
+            contacts_schedule, joint_positions
+        )
         if omega_tilde is not None:
             self._last_gyro = _vector(omega_tilde, 3, "omega_tilde")
         self.core.correct_contacts(positions, schedule, covariance)
 
-    def update_filter(self, a_tilde, omega_tilde, contacts_schedule, joint_positions,
-                      joint_velocities=None, *, dt=None):
+    def update_filter(
+        self,
+        a_tilde,
+        omega_tilde,
+        contacts_schedule,
+        joint_positions,
+        joint_velocities=None,
+        *,
+        dt=None,
+    ):
         """Advance by dt, then update FK/contact measurements at the new time.
 
         joint_velocities is accepted for compatibility and is not used. If this
@@ -701,22 +821,32 @@ class BaseInEKF:
         if joint_velocities is not None:
             _vector(joint_velocities, self._nvj, "joint_velocities")
         # Validate kinematics before mutating the filter state.
-        positions, schedule, covariance = self._kinematics(contacts_schedule, joint_positions)
+        positions, schedule, covariance = self._kinematics(
+            contacts_schedule, joint_positions
+        )
         self.core.propagate(acceleration, gyro, interval)
         self.core.correct_contacts(positions, schedule, covariance)
         self._last_gyro = gyro
-        self._last_update_seconds = time.perf_counter()-started
+        self._last_update_seconds = time.perf_counter() - started
 
     def get_filter_output(self):
         """Same dictionary/frames as BaseEKF, including a Pinocchio Quaternion."""
-        RB = self.core.R@self._R_BI.T
-        pB = self.core.p-RB@self._r_BI
-        wB = self._R_BI@(self._last_gyro-self.core.bg)
-        vB = RB.T@self.core.v-np.cross(wB, self._r_BI)
-        quaternion = self._pin.Quaternion(RB)
+        rotation_base = self.core.R @ self._R_BI.T
+        position_base = self.core.p - rotation_base @ self._r_BI
+        angular_velocity_base = self._R_BI @ (
+            self._last_gyro - self.core.bg
+        )
+        velocity_base = (
+            rotation_base.T @ self.core.v
+            - np.cross(angular_velocity_base, self._r_BI)
+        )
+        quaternion = self._pin.Quaternion(rotation_base)
         quaternion.normalize()
-        return {"base_position": pB.copy(), "base_velocity": vB.copy(),
-                "base_orientation": quaternion}
+        return {
+            "base_position": position_base.copy(),
+            "base_velocity": velocity_base.copy(),
+            "base_orientation": quaternion,
+        }
 
     def get_is_in_imu_frame(self):
         return True
@@ -734,12 +864,16 @@ class BaseInEKF:
         return self._nb_ee
 
     def get_imu_biases(self):
-        return {"imu_bias_acceleration": self.core.ba.copy(),
-                "imu_bias_orientation": self.core.bg.copy()}
+        return {
+            "imu_bias_acceleration": self.core.ba.copy(),
+            "imu_bias_orientation": self.core.bg.copy(),
+        }
 
     def get_contact_positions(self):
-        return {self._end_effectors_frame_names[i]: self.core._feet[:, k].copy()
-                for k, i in enumerate(self.core.contact_ids)}
+        return {
+            self._end_effectors_frame_names[i]: self.core._feet[:, k].copy()
+            for k, i in enumerate(self.core.contact_ids)
+        }
 
     def get_covariance(self):
         """Full invariant covariance [rotation,world v,world p,contacts,bg,ba]."""
