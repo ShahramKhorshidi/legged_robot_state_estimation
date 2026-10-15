@@ -83,7 +83,7 @@ class BaseEKF(object):
         robot_config = config.get('robot', {})
         self._nx = 5 * 3
         self.__init_robot_config = np.array(robot_config.get('initial_configuration'))
-        self._dt = robot_config.get('dt', 0.001)  # Default dt: 0.001
+        self._dt = dt
         self._g_vector = np.array([0, 0, -9.81])
         self._base_frame_name = robot_config.get('base_link_name')
         self._end_effectors_frame_names = robot_config.get('end_effectors_frame_names')
@@ -175,7 +175,7 @@ class BaseEKF(object):
         pin.framesForwardKinematics(
               self._rmodel, self._rdata, robot_configuration
         )
-        base_link_index =   self._rmodel.getFrameId(self._base_frame_name)
+        base_link_index = self._rmodel.getFrameId(self._base_frame_name)
         return self._rdata.oMf[base_link_index]
 
     # public methods
@@ -268,7 +268,7 @@ class BaseEKF(object):
             )
             frame_position = self._rdata.oMf[frame_index].translation
             frame_velocity = pin.getFrameVelocity(
-                  self._rmodel,
+                self._rmodel,
                 self._rdata,
                 frame_index,
                 pin.LOCAL_WORLD_ALIGNED,

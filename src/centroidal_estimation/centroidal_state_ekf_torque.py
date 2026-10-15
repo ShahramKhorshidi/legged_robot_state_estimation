@@ -1,6 +1,6 @@
 """Centroidal Extended Kalman Filter Class
 License BSD-3-Clause
-Copyright (c) 2022, New York University and Max Planck Gesellschaft.
+Copyright (c) 2021, New York University and Max Planck Gesellschaft.
 Author: Shahram Khorshidi
 """
 

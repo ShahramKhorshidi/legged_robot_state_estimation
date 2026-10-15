@@ -1,7 +1,7 @@
-"""Extended Kalman Filter Class
+"""Unscented Kalman Filter Class
 License BSD-3-Clause
-Copyright (c) 2021, New York University and Max Planck Gesellschaft.
-Authors: Shahram Khorshidi
+Copyright (c) 2023, University of Bonn.
+Author: Shahram Khorshidi
 """
 
 import yaml
@@ -12,27 +12,8 @@ from numpy.linalg import inv
 from scipy.linalg import sqrtm
 from scipy.linalg import block_diag
 from scipy.linalg import cholesky
-from base_state_ekf import BaseEKF
+from src.base_estimation.base_state_ekf import BaseEKF
 
-
-# class UKF(object):
-#     def __init__(self, urdf_file, config_file):
-#         # Load configuration from YAML file
-#         with open(config_file, 'r') as file:
-#             config = yaml.safe_load(file)
-#         self._rmodel = pin.buildModelFromUrdf(urdf_file, pin.JointModelFreeFlyer())
-#         self.__rdata = self._rmodel.createData()
-#         robot_config = config.get('robot', {})
-#         self.__robot_mass = robot_config.get('mass')
-#         self.__nx = 3 * 3
-#         self.__dt = robot_config.get('dt', 0.001)  # Default dt 0.001
-#         self.__g_vector = np.array([0, 0, -9.81])
-#         self.__end_effectors_frame_names = robot_config.get('end_effectors_frame_names')
-#         self.__rot_base_to_imu = np.array(robot_config.get('rot_base_to_imu'))
-#         self.__r_base_to_imu = np.array(robot_config.get('r_base_to_imu'))
-#         self.__SE3_imu_to_base = pin.SE3(
-#             self.__rot_base_to_imu.T, self.__r_base_to_imu
-#         )
 
 class BaseUKF(BaseEKF):
     def __init__(self, robot_config, dt=0.001, alpha=0.1, beta=2.0, kappa=0.0):
@@ -118,7 +99,7 @@ if __name__ == "__main__":
     cur_dir = Path.cwd()
     robot_urdf = cur_dir/"files"/"go1.urdf"
     robot_config = cur_dir/"files"/"go1_config.yaml"
-    robot_base_ekf = UKF(str(robot_urdf), robot_config)
+    robot_base_ekf = BaseEKF(str(robot_urdf), robot_config)
     robot_base_ekf.set_meas_noise_cov(np.array([1e-4, 1e-4, 1e-4]))
     f_tilde = np.random.rand(3)
     w_tilde = np.random.rand(3)
