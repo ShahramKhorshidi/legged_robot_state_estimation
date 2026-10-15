@@ -1,0 +1,28 @@
+robot:
+  name: "solo12"
+  mass: 2.501304 # Kg
+  base_link_name: "base_link"
+  end_effectors_frame_names:
+    - "FL_FOOT"
+    - "FR_FOOT"
+    - "HL_FOOT"
+    - "HR_FOOT"
+  initial_configuration: 
+    [0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 1.0,
+     0.0, 0.8, -1.6,
+     0.0, 0.8, -1.6,
+     0.0, -0.8, 1.6,
+     0.0, -0.8, 1.6]
+  
+  # Rotation and translation from base to IMU frame
+  rot_base_to_imu:
+    - [1.0, 0.0, 0.0]
+    - [0.0, 1.0, 0.0]
+    - [0.0, 0.0, 1.0]
+  r_base_to_imu: [-0.01592, -0.06659, -0.00617]
+
+  # IMU thermal and bias noise (from IMU datasheet)
+  imu_accel_thermal_noise: 0.0001962  # m/(sec^2*sqrt(Hz))
+  imu_gyro_thermal_noise: 0.0000873  # rad/(sec*sqrt(Hz))
+  imu_accel_bias_noise: 0.0001  # m/(sec^3*sqrt(Hz))
+  imu_gyro_bias_noise: 0.000309  # rad/(sec^2*sqrt(Hz))
