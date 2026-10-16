@@ -33,7 +33,7 @@ and orientation. They also account for IMU accelerometer and gyroscope biases.
 <p align="center">
   <img src="https://github.com/user-attachments/assets/ad07f1c5-3aaf-4dc9-9aee-6c40ab8e7a18"
        alt="Physically-Consistent whole-body inertial parameter identification"
-       width="750">
+       width="650">
 </p>
 
 ## Centroidal-state estimation
