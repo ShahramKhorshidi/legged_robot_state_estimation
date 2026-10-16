@@ -32,7 +32,7 @@ and orientation. They also account for IMU accelerometer and gyroscope biases.
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/ad07f1c5-3aaf-4dc9-9aee-6c40ab8e7a18"
-       alt="Physically-Consistent whole-body inertial parameter identification"
+       alt=""
        width="750">
 </p>
 
@@ -54,8 +54,8 @@ angular momentum.
 
 <p align="center">
   <img  src="https://github.com/user-attachments/assets/c386d3bb-017f-465a-b7af-ffe951be21b3" />
-       alt="Physically-Consistent whole-body inertial parameter identification"
-       width="650">
+       alt=""
+       width="600">
 </p>
 
 ---
