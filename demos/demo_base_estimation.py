@@ -1,20 +1,17 @@
-import argparse
 import sys
-from pathlib import Path
-
-import matplotlib.pyplot as plt
+import yaml
+import argparse
 import numpy as np
 import pinocchio as pin
-import yaml
-
+from pathlib import Path
+import matplotlib.pyplot as plt
 
 # Allow this file to be run directly from any working directory.
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
-
-from base_estimation.base_est_ekf import BaseEKF
-from base_estimation.base_est_ukf import BaseUKF
-from base_estimation.base_state_inekf import BaseInEKF
+sys.path.insert(0, str(REPOSITORY_ROOT))
+from src.base_estimation.base_est_ekf import BaseEKF
+from src.base_estimation.base_est_ukf import BaseUKF
+from src.base_estimation.base_state_inekf import BaseInEKF
 
 
 def load_data(path, data_prefix):

@@ -1,19 +1,16 @@
-import argparse
 import sys
-from pathlib import Path
-
-import matplotlib.pyplot as plt
+import yaml
+import argparse
 import numpy as np
 import pinocchio as pin
-import yaml
-
+from pathlib import Path
+import matplotlib.pyplot as plt
 
 # Allow this file to be run directly from any working directory.
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPOSITORY_ROOT / "src"))
-
-from centroidal_estimation.centroidal_state_ekf_force import ForceCentroidalEKF
-from centroidal_estimation.centroidal_state_ekf_torque import TorqueCentroidalEKF
+sys.path.insert(0, str(REPOSITORY_ROOT))
+from src.centroidal_estimation.centroidal_state_ekf_force import ForceCentroidalEKF
+from src.centroidal_estimation.centroidal_state_ekf_torque import TorqueCentroidalEKF
 
 
 def load_data(path, robot_paths, estimator_name):
@@ -245,7 +242,7 @@ def plot_results(
         (slice(6, 9), "Angular momentum (kg m^2/s)"),
     )
     axes_names = ("x", "y", "z")
-    figure, axes = plt.subplots(3, 3, figsize=(14, 9), sharex=True)
+    figure, axes = plt.subplots(3, 3, figsize=(9, 5), sharex=True)
 
     for row, (state_slice, label) in enumerate(quantities):
         reference_state = reference[:, state_slice]
