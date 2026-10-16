@@ -52,6 +52,12 @@ angular momentum.
   constraints. This relates measured joint torques to centroidal dynamics
   without requiring measured contact forces.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/86aae917-1bc8-45ae-86fe-658b3c4e3452"
+       alt="Physically-Consistent whole-body inertial parameter identification"
+       width="750">
+</p>
+
 ---
 
 ## Key features
