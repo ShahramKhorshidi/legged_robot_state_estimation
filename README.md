@@ -13,18 +13,18 @@ The codebase is divided into two estimation groups.
 The base-state estimators compute the floating-base position, linear velocity,
 and orientation. They also account for IMU accelerometer and gyroscope biases.
 
-- **(1) Extended Kalman Filter (EKF) [1]**
+- **(1) Extended Kalman Filter (EKF) [1, 2]**
 
   A classical error-state EKF that propagates the base state with IMU
   measurements and corrects it using contact-constrained leg kinematics.
 
-- **(2) Unscented Kalman Filter on SO(3) (UKF) [2, 3]**
+- **(2) Unscented Kalman Filter on SO(3) (UKF) [3, 4]**
 
   A scaled unscented Kalman filter adapted to the legged-robot state. The
   orientation sigma points, mean, and residuals are handled directly on
   `SO(3)` rather than by treating rotation as an unconstrained Euclidean vector.
 
-- **(3) Contact-Aided Invariant Extended Kalman Filter (InEKF) [4]**
+- **(3) Contact-Aided Invariant Extended Kalman Filter (InEKF) [5]**
 
   A right-invariant EKF that represents rotation, velocity, position, and
   active contact points on the corresponding matrix Lie group. It supports
@@ -41,12 +41,12 @@ and orientation. They also account for IMU accelerometer and gyroscope biases.
 The centroidal estimators compute center-of-mass position, linear momentum, and
 angular momentum.
 
-- **(1) Contact-force-based centroidal EKF [5]**
+- **(1) Contact-force-based centroidal EKF [6]**
 
   Uses measured contact forces and contact-point locations in the centroidal
   momentum dynamics. Euler and RK4 integration are available in the demo.
 
-- **(2) Joint-torque-based centroidal EKF [6]**
+- **(2) Joint-torque-based centroidal EKF [7]**
 
   Projects the whole-body dynamics into the null space of the contact
   constraints. This relates measured joint torques to centroidal dynamics
@@ -237,13 +237,19 @@ python -m unittest discover -s tests -v
 
 ## Citation
 
-If you use the torque-based centroidal state estimator in an academic work, please cite the following paper:
+If you use the EKF base state estimator or torque-based centroidal state estimator in an academic work, please cite the followings:
 ```
 @inproceedings{khorshidi23icra,
   title={On the Use of Torque Measurement in Centroidal State Estimation}, 
   author={Khorshidi, Shahram and Gazar, Ahmad and Rotella, Nicholas and Naveau, Maximilien and Righetti, Ludovic and Bennewitz, Maren and Khadiv, Majid},
   booktitle={Proc. of the IEEE International Conference on Robotics and Automation (ICRA)}, 
   year={2023}
+}
+@misc{Khorshidi22,
+  title={State Estimation and Feedback Control of Legged Robots},
+  author={Khorshidi, Shahram},
+  Institution={Hamburg University of Technology (TUHH)}
+  year={2022}
 }
 ```
 
@@ -257,30 +263,33 @@ Fusion of Leg Kinematics and IMU,” *Robotics: Science and Systems VIII*, 2012.
 [paper](https://www.roboticsproceedings.org/rss08/p03.html),
 [doi](https://doi.org/10.15607/RSS.2012.VIII.003).
 
-[2] E. A. Wan and R. van der Merwe, “The Unscented Kalman Filter for Nonlinear
+[2] S. Khorshidi, "State Estimation and Feedback Control of Legged Robots," Technische Universität Hamburg, 2022.
+[doi](https://doi.org/10.15480/882.9637)
+
+[3] E. A. Wan and R. van der Merwe, “The Unscented Kalman Filter for Nonlinear
 Estimation,” *Proceedings of the IEEE 2000 Adaptive Systems for Signal
 Processing, Communications, and Control Symposium*, pp. 153–158, 2000.
 [doi](https://doi.org/10.1109/ASSPCC.2000.882463).
 
-[3] M. Brossard, A. Barrau, and S. Bonnabel, “A Code for Unscented Kalman
+[4] M. Brossard, A. Barrau, and S. Bonnabel, “A Code for Unscented Kalman
 Filtering on Manifolds (UKF-M),” *2020 IEEE International Conference on
 Robotics and Automation (ICRA)*, pp. 5701–5708, 2020.
 [paper](https://arxiv.org/abs/2002.00878),
 [doi](https://doi.org/10.1109/ICRA40945.2020.9197489).
 
-[4] R. Hartley, M. Ghaffari Jadidi, J. W. Grizzle, and R. M. Eustice,
+[5] R. Hartley, M. Ghaffari Jadidi, J. W. Grizzle, and R. M. Eustice,
 “Contact-Aided Invariant Extended Kalman Filtering for Legged Robot State
 Estimation,” *Robotics: Science and Systems XIV*, 2018.
 [paper](https://www.roboticsproceedings.org/rss14/p50.html),
 [doi](https://doi.org/10.15607/RSS.2018.XIV.050).
 
-[5] N. Rotella, A. Herzog, S. Schaal, and L. Righetti, “Humanoid Momentum
+[6] N. Rotella, A. Herzog, S. Schaal, and L. Righetti, “Humanoid Momentum
 Estimation Using Sensed Contact Wrenches,” *2015 IEEE-RAS 15th International
 Conference on Humanoid Robots (Humanoids)*, pp. 556–563, 2015.
 [paper](https://arxiv.org/abs/1507.04401),
 [doi](https://doi.org/10.1109/HUMANOIDS.2015.7363417).
 
-[6] S. Khorshidi, A. Gazar, N. Rotella, M. Naveau, L. Righetti, M. Bennewitz,
+[7] S. Khorshidi, A. Gazar, N. Rotella, M. Naveau, L. Righetti, M. Bennewitz,
 and M. Khadiv, “On the Use of Torque Measurement in Centroidal State
 Estimation,” *2023 IEEE International Conference on Robotics and Automation
 (ICRA)*, 2023.
