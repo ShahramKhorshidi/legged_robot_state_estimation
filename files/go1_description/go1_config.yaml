@@ -1,4 +1,5 @@
 robot:
+  name: "go1"
   mass: 14.100428
   base_link_name: "trunk"
   end_effectors_frame_names:

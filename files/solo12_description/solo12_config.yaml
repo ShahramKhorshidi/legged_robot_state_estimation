@@ -8,11 +8,11 @@ robot:
     - "HL_FOOT"
     - "HR_FOOT"
   initial_configuration: 
-    [0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 1.0,
-     0.0, 0.8, -1.6,
-     0.0, 0.8, -1.6,
-     0.0, -0.8, 1.6,
-     0.0, -0.8, 1.6]
+    [0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 1.0, # Base pose (x, y, z, qx, qy, qz, qw)
+     0.0, 0.8, -1.6, # FL leg (hip, thigh, calf)
+     0.0, 0.8, -1.6, # FR leg (hip, thigh, calf)
+     0.0, -0.8, 1.6, # HL leg (hip, thigh, calf)
+     0.0, -0.8, 1.6] # HR leg (hip, thigh, calf)
   
   # Rotation and translation from base to IMU frame
   rot_base_to_imu:
@@ -22,7 +22,16 @@ robot:
   r_base_to_imu: [-0.01592, -0.06659, -0.00617]
 
   # IMU thermal and bias noise (from IMU datasheet)
-  imu_accel_thermal_noise: 0.0001962  # m/(sec^2*sqrt(Hz))
+  imu_accel_thermal_noise: 0.0001962 # m/(sec^2*sqrt(Hz))
   imu_gyro_thermal_noise: 0.0000873  # rad/(sec*sqrt(Hz))
-  imu_accel_bias_noise: 0.0001  # m/(sec^3*sqrt(Hz))
-  imu_gyro_bias_noise: 0.000309  # rad/(sec^2*sqrt(Hz))
+  imu_accel_bias_noise: 0.0001       # m/(sec^3*sqrt(Hz))
+  imu_gyro_bias_noise: 0.000309      # rad/(sec^2*sqrt(Hz))
+
+# Parameters tuned for the recorded Solo12 trajectory. The feet move slightly
+# during stance, so the contact measurements need more weight than the IMU-only
+# propagation without being treated as perfectly rigid constraints.
+base_estimation:
+  measurement_noise: 1.0e-7
+  sigma_encoder: 1.0e-3
+  sigma_kinematics: 1.0e-3
+  sigma_contact: 1.0e-3
