@@ -105,15 +105,15 @@ Matplotlib.
 Select the robot with `--robot` and the filter with `--estimator`:
 
 ```bash
-python demos/demo_base_estimation.py --robot go1 --estimator ekf
-python demos/demo_base_estimation.py --robot go1 --estimator ukf
-python demos/demo_base_estimation.py --robot go1 --estimator inekf
+python demos/demo_base_estimation.py --robot solo12 --estimator ekf
+python demos/demo_base_estimation.py --robot solo12 --estimator ukf
+python demos/demo_base_estimation.py --robot solo12 --estimator inekf
 ```
 
 The same estimators can be run on another registered robot, for example:
 
 ```bash
-python demos/demo_base_estimation.py --robot solo12 --estimator ekf
+python demos/demo_base_estimation.py --robot go1 --estimator ekf
 ```
 
 The demo reports position, velocity, and orientation RMSE and plots each
@@ -122,11 +122,9 @@ estimated state against its reference.
 ### (2) Centroidal-state estimation demo
 
 Use `force` when measured contact forces are available, or `torque` to use the
-projected-dynamics estimator:
+projected-dynamics estimator with joint torque measurement:
 
 ```bash
-python demos/demo_centroidal_estimation.py --robot go1 --estimator force
-python demos/demo_centroidal_estimation.py --robot go1 --estimator torque
 python demos/demo_centroidal_estimation.py --robot solo12 --estimator force
 python demos/demo_centroidal_estimation.py --robot solo12 --estimator torque
 ```
@@ -149,7 +147,7 @@ example, the following command processes 1,000 samples and saves the figure
 without opening a graphical window:
 
 ```bash
-python demos/demo_base_estimation.py --robot go1 --estimator ukf \
+python demos/demo_base_estimation.py --robot solo12 --estimator ukf \
     --samples 1000 --save results/base_ukf.png --no_show
 ```
 
@@ -178,8 +176,7 @@ inertial parameters, base frame, and contact frames.
 
 #### (ii) Robot configuration
 
-Add a YAML configuration beside the URDF. Use `go1_config.yaml` or
-`solo12_config.yaml` as a template. The configuration includes:
+Add a YAML configuration beside the URDF. Use `solo12_config.yaml` as a template. The configuration includes:
 
 - Robot mass and base-link name
 - End-effector/contact frame names
