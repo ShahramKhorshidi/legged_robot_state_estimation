@@ -53,7 +53,7 @@ angular momentum.
   without requiring measured contact forces.
 
 <p align="center">
-  <img  src="https://github.com/user-attachments/assets/c386d3bb-017f-465a-b7af-ffe951be21b3" />
+  <img  src="https://github.com/user-attachments/assets/c386d3bb-017f-465a-b7af-ffe951be21b3"
        alt=""
        width="600">
 </p>
