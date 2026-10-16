@@ -264,7 +264,7 @@ def plot_results(
                 estimated_state[:, column],
                 "r--",
                 linewidth=0.9,
-                label=estimator_name.upper(),
+                label="EKF_"+estimator_name.lower(),
             )
             axis.set_title(f"{label}: {axis_name}")
             axis.grid(True)

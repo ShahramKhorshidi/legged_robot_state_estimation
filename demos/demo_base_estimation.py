@@ -5,6 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pinocchio as pin
+import yaml
 
 
 # Allow this file to be run directly from any working directory.
@@ -53,12 +54,13 @@ def get_robot_paths(root, robot):
             "config": root / "files" / "go1_description" / "go1_config.yaml",
             "data_prefix": "robot",
         },
-
         "solo12": {
-                    "urdf": root / "files" / "solo12_description" / "solo12.urdf",
-                    "config": root / "files" / "solo12_description" / "solo12_config.yaml",
-                    "data_prefix": "solo_robot",
-                },
+            "urdf": root / "files" / "solo12_description" / "solo12.urdf",
+            "config": (
+                root / "files" / "solo12_description" / "solo12_config.yaml"
+            ),
+            "data_prefix": "solo_robot",
+        },
         # Add more robots here as you extend the framework.
         # "anymal": {
         #     "urdf": root / "files" / "anymal_description" / "anymal.urdf",
@@ -72,29 +74,76 @@ def get_robot_paths(root, robot):
     return robots[robot]
 
 
+def load_estimator_parameters(config_file):
+    """Load optional robot-specific estimator tuning from its YAML file."""
+    with Path(config_file).open(encoding="utf-8") as file:
+        config = yaml.safe_load(file)
+    parameters = config.get("base_estimation", {})
+    if not isinstance(parameters, dict):
+        raise ValueError(
+            "base_estimation in the robot config must be a mapping"
+        )
+    return parameters
+
+
+def select_parameter(command_line_value, parameters, name, default):
+    """Prefer a command-line value, then robot tuning, then a safe default."""
+    if command_line_value is not None:
+        return command_line_value
+    return parameters.get(name, default)
+
+
 def create_estimator(args, robot_paths):
     """Create the estimator selected on the command line."""
     urdf = str(robot_paths["urdf"])
     config = robot_paths["config"]
+    parameters = load_estimator_parameters(config)
 
     if args.estimator == "ekf":
         estimator = BaseEKF(urdf, config, dt=args.dt)
+        measurement_noise = select_parameter(
+            args.measurement_noise,
+            parameters,
+            "measurement_noise",
+            0.1,
+        )
         estimator.set_meas_noise_cov(
-            np.full(3, args.measurement_noise, dtype=float)
+            np.full(3, measurement_noise, dtype=float)
         )
     elif args.estimator == "ukf":
         estimator = BaseUKF(urdf, config, dt=args.dt)
+        measurement_noise = select_parameter(
+            args.measurement_noise,
+            parameters,
+            "measurement_noise",
+            0.1,
+        )
         estimator.set_meas_noise_cov(
-            np.full(3, args.measurement_noise, dtype=float)
+            np.full(3, measurement_noise, dtype=float)
         )
     elif args.estimator == "inekf":
         estimator = BaseInEKF(
             urdf,
             config,
             dt=args.dt,
-            sigma_encoder=args.sigma_encoder,
-            sigma_kinematics=args.sigma_kinematics,
-            sigma_contact=args.sigma_contact,
+            sigma_encoder=select_parameter(
+                args.sigma_encoder,
+                parameters,
+                "sigma_encoder",
+                1e-3,
+            ),
+            sigma_kinematics=select_parameter(
+                args.sigma_kinematics,
+                parameters,
+                "sigma_kinematics",
+                0.1,
+            ),
+            sigma_contact=select_parameter(
+                args.sigma_contact,
+                parameters,
+                "sigma_contact",
+                0.1,
+            ),
             contact_gate_probability=args.contact_gate_probability,
         )
     else:
@@ -302,26 +351,38 @@ def parse_args():
     parser.add_argument(
         "--measurement_noise",
         type=float,
-        default=0.1,
-        help="EKF/UKF leg-odometry noise covariance diagonal (default: 0.1)",
+        default=None,
+        help=(
+            "EKF/UKF leg-odometry noise covariance diagonal "
+            "(default: robot config, otherwise 0.1)"
+        ),
     )
     parser.add_argument(
         "--sigma_encoder",
         type=float,
-        default=1e-3,
-        help="InEKF encoder noise standard deviation (default: 1e-3)",
+        default=None,
+        help=(
+            "InEKF encoder noise standard deviation "
+            "(default: robot config, otherwise 1e-3)"
+        ),
     )
     parser.add_argument(
         "--sigma_kinematics",
         type=float,
-        default=0.1,
-        help="InEKF forward-kinematics noise standard deviation (default: 0.1)",
+        default=None,
+        help=(
+            "InEKF forward-kinematics noise standard deviation "
+            "(default: robot config, otherwise 0.1)"
+        ),
     )
     parser.add_argument(
         "--sigma_contact",
         type=float,
-        default=0.1,
-        help="InEKF contact random-walk standard deviation (default: 0.1)",
+        default=None,
+        help=(
+            "InEKF contact random-walk standard deviation "
+            "(default: robot config, otherwise 0.1)"
+        ),
     )
     parser.add_argument(
         "--contact_gate_probability",
