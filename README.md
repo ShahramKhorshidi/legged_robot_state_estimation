@@ -30,6 +30,12 @@ and orientation. They also account for IMU accelerometer and gyroscope biases.
   active contact points on the corresponding matrix Lie group. It supports
   switching contacts and IMU-bias estimation.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/ad07f1c5-3aaf-4dc9-9aee-6c40ab8e7a18"
+       alt="Physically-Consistent whole-body inertial parameter identification"
+       width="550">
+</p>
+
 ## Centroidal-state estimation
 
 The centroidal estimators compute center-of-mass position, linear momentum, and
