@@ -23,12 +23,12 @@ from base_estimation.base_state_inekf import (
 class BaseUKFTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.urdf = REPOSITORY_ROOT / "files" / "go1_description" / "go1.urdf"
+        cls.urdf = REPOSITORY_ROOT / "files" / "solo12_description" / "solo12.urdf"
         cls.config = (
             REPOSITORY_ROOT
             / "files"
-            / "go1_description"
-            / "go1_config.yaml"
+            / "solo12_description"
+            / "solo12_config.yaml"
         )
 
     def make_filter(self):
@@ -66,10 +66,10 @@ class BaseUKFTest(unittest.TestCase):
 
     def test_leg_velocity_sigma_transform_matches_measurement_jacobian(self):
         ukf = self.make_filter()
-        q = np.loadtxt(REPOSITORY_ROOT / "data" / "robot_q.dat", delimiter="\t")
-        dq = np.loadtxt(REPOSITORY_ROOT / "data" / "robot_dq.dat", delimiter="\t")
+        q = np.loadtxt(REPOSITORY_ROOT / "data" / "solo_robot_q.dat", delimiter="\t")
+        dq = np.loadtxt(REPOSITORY_ROOT / "data" / "solo_robot_dq.dat", delimiter="\t")
         imu = np.loadtxt(
-            REPOSITORY_ROOT / "data" / "robot_imu.dat", delimiter="\t"
+            REPOSITORY_ROOT / "data" / "solo_robot_imu.dat", delimiter="\t"
         )
         ukf._omega_tilde = imu[3:, 0]
         covariance = np.diag(np.linspace(1.0, 2.0, 15)) * 1e-7
@@ -108,15 +108,15 @@ class BaseUKFTest(unittest.TestCase):
             rtol=1e-8,
         )
 
-    def test_go1_updates_remain_on_so3_with_psd_covariance(self):
+    def test_solo12_updates_remain_on_so3_with_psd_covariance(self):
         ukf = self.make_filter()
-        q = np.loadtxt(REPOSITORY_ROOT / "data" / "robot_q.dat", delimiter="\t")
-        dq = np.loadtxt(REPOSITORY_ROOT / "data" / "robot_dq.dat", delimiter="\t")
+        q = np.loadtxt(REPOSITORY_ROOT / "data" / "solo_robot_q.dat", delimiter="\t")
+        dq = np.loadtxt(REPOSITORY_ROOT / "data" / "solo_robot_dq.dat", delimiter="\t")
         contact = np.loadtxt(
-            REPOSITORY_ROOT / "data" / "robot_cnt.dat", delimiter="\t"
+            REPOSITORY_ROOT / "data" / "solo_robot_cnt.dat", delimiter="\t"
         )
         imu = np.loadtxt(
-            REPOSITORY_ROOT / "data" / "robot_imu.dat", delimiter="\t"
+            REPOSITORY_ROOT / "data" / "solo_robot_imu.dat", delimiter="\t"
         )
 
         ukf.set_mu_post("ekf_frame_position", q[:3, 0])
@@ -142,13 +142,13 @@ class BaseUKFTest(unittest.TestCase):
 
     def test_imu_frame_mode_uses_extrinsic_transform(self):
         ukf = self.make_filter()
-        q = np.loadtxt(REPOSITORY_ROOT / "data" / "robot_q.dat", delimiter="\t")
-        dq = np.loadtxt(REPOSITORY_ROOT / "data" / "robot_dq.dat", delimiter="\t")
+        q = np.loadtxt(REPOSITORY_ROOT / "data" / "solo_robot_q.dat", delimiter="\t")
+        dq = np.loadtxt(REPOSITORY_ROOT / "data" / "solo_robot_dq.dat", delimiter="\t")
         contact = np.loadtxt(
-            REPOSITORY_ROOT / "data" / "robot_cnt.dat", delimiter="\t"
+            REPOSITORY_ROOT / "data" / "solo_robot_cnt.dat", delimiter="\t"
         )
         imu = np.loadtxt(
-            REPOSITORY_ROOT / "data" / "robot_imu.dat", delimiter="\t"
+            REPOSITORY_ROOT / "data" / "solo_robot_imu.dat", delimiter="\t"
         )
         ukf.set_ekf_in_imu_frame(True)
         ukf.update_filter(
@@ -247,21 +247,21 @@ class ContactAidedInEKFTest(unittest.TestCase):
 
 
 class BaseInEKFTest(unittest.TestCase):
-    def test_go1_contact_updates_and_switching_contacts(self):
-        urdf = REPOSITORY_ROOT / "files" / "go1_description" / "go1.urdf"
+    def test_solo12_contact_updates_and_switching_contacts(self):
+        urdf = REPOSITORY_ROOT / "files" / "solo12_description" / "solo12.urdf"
         config = (
             REPOSITORY_ROOT
             / "files"
-            / "go1_description"
-            / "go1_config.yaml"
+            / "solo12_description"
+            / "solo12_config.yaml"
         )
-        q = np.loadtxt(REPOSITORY_ROOT / "data" / "robot_q.dat", delimiter="\t")
-        dq = np.loadtxt(REPOSITORY_ROOT / "data" / "robot_dq.dat", delimiter="\t")
+        q = np.loadtxt(REPOSITORY_ROOT / "data" / "solo_robot_q.dat", delimiter="\t")
+        dq = np.loadtxt(REPOSITORY_ROOT / "data" / "solo_robot_dq.dat", delimiter="\t")
         contact = np.loadtxt(
-            REPOSITORY_ROOT / "data" / "robot_cnt.dat", delimiter="\t"
+            REPOSITORY_ROOT / "data" / "solo_robot_cnt.dat", delimiter="\t"
         )
         imu = np.loadtxt(
-            REPOSITORY_ROOT / "data" / "robot_imu.dat", delimiter="\t"
+            REPOSITORY_ROOT / "data" / "solo_robot_imu.dat", delimiter="\t"
         )
 
         inekf = BaseInEKF(str(urdf), config)
