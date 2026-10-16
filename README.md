@@ -122,16 +122,12 @@ estimated state against its reference.
 ### (2) Centroidal-state estimation demo
 
 Use `force` when measured contact forces are available, or `torque` to use the
-projected-dynamics estimator with joint torque measurement:
+projected-dynamics estimator with joint torque measurement. In general the conatct forces on the actual robot are not accurate or there is no sensor at the end-effector, that's why the torque-based estimaor is preferred.
 
 ```bash
 python demos/demo_centroidal_estimation.py --robot solo12 --estimator force
 python demos/demo_centroidal_estimation.py --robot solo12 --estimator torque
 ```
-
-The Go1 example uses the recorded `cent_state.dat` reference. For datasets
-without a separate centroidal-state file, such as Solo12, the demo computes the
-reference from the URDF and recorded `q/dq` trajectory.
 
 The force estimator supports both integration methods:
 
