@@ -1,5 +1,3 @@
-<img width="900" height="500" alt="Figure_2" src="https://github.com/user-attachments/assets/38c38011-0025-4cf4-884d-44f0e967e108" />
-<img width="900" height="500" alt="Figure_2" src="https://github.com/user-attachments/assets/976c660a-82e4-449c-86fc-c8adb0428d27" />
 # Legged Robot State Estimation
 
 **Proprioceptive Base and Centroidal State Estimation for Legged Robots.**
@@ -57,7 +55,7 @@ angular momentum.
 <p align="center">
   <img  src="https://github.com/user-attachments/assets/c386d3bb-017f-465a-b7af-ffe951be21b3" />
        alt="Physically-Consistent whole-body inertial parameter identification"
-       width="750">
+       width="650">
 </p>
 
 ---
